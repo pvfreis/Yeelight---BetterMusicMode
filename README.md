@@ -4,7 +4,7 @@ It always irked me how bad the music mode that comes with the Yeelight app is, s
 
 ## Features:
 
-- Beatdetection via Madmom
+- Beatdetection via Madmom (Currently varies a LOT)
 - (TO-DO) Option to add Spotify API Key to double-check current BPM
 
 
