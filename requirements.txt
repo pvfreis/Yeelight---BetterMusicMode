@@ -1,0 +1,4 @@
+yeelight
+sounddevice
+madmom
+spotipy
