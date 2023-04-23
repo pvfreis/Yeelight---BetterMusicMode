@@ -93,7 +93,9 @@ def change_color(beats, reference_bpm, detected_bpm):
     global current_beats
     if len(beats) > 0:
         current_beats = beats
-        scale_factor = reference_bpm / detected_bpm
+        weight = 0.95  # Adjust this value to change the weight of the reference BPM
+        weighted_bpm = (weight * reference_bpm) + ((1 - weight) * detected_bpm)
+        scale_factor = reference_bpm / weighted_bpm
         for i in range(len(beats) - 1):
             r = random.randint(0, 255)
             g = random.randint(0, 255)
@@ -103,6 +105,7 @@ def change_color(beats, reference_bpm, detected_bpm):
             time_until_next_beat = (beats[i + 1] - beats[i]) * scale_factor
             print(f"Time difference between beats: {time_until_next_beat:.3f} seconds")
             time.sleep(time_until_next_beat)
+
 
 # Callback function to process audio data
 def audio_callback(indata, frames, time, status):
