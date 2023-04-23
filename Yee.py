@@ -1,6 +1,6 @@
 import sounddevice as sd
 import numpy as np
-from madmom.features.beats import RNNBeatProcessor, BeatTrackingProcessor
+from madmom.features.beats import RNNBeatProcessor, DBNBeatTrackingProcessor
 from yeelight import Bulb, LightType, transitions
 import time
 import random
@@ -43,14 +43,17 @@ if device_index is None:
 
 # Madmom beat detection
 bp = RNNBeatProcessor()
-btp = BeatTrackingProcessor(fps=100)
+beat_processor = DBNBeatTrackingProcessor(fps=100)
+
+current_beats = []
+
 
 # Buffer to store audio data for beat detection
 audio_buffer = np.empty((0, 1), dtype=np.float32)
 
 # Audio configuration
 RATE = 44100
-BUFFER_SIZE = 1024
+BUFFER_SIZE = 2048
 CHANNELS = 2
 FORMAT = 'float32'
 BPM_WINDOW_SIZE = 5
@@ -74,7 +77,7 @@ def beat_detection(audio_data):
 
     if audio_buffer.shape[0] >= RATE:
         act = bp(audio_buffer[:RATE])
-        beats = btp(act)
+        beats = beat_processor(act)
         audio_buffer = audio_buffer[BUFFER_SIZE:]
 
         if len(beats) > 1:
@@ -87,15 +90,19 @@ def beat_detection(audio_data):
 
 # Change Yeelight color based on the beat
 def change_color(beats, reference_bpm, detected_bpm):
-    scale_factor = reference_bpm / detected_bpm
-    for i in range(len(beats) - 1):
-        r = random.randint(0, 255)
-        g = random.randint(0, 255)
-        b = random.randint(0, 255)
-        bulb.set_rgb(r, g, b)
-        print(f"Color changed to ({r}, {g}, {b})")
-        time_until_next_beat = (beats[i + 1] - beats[i]) * scale_factor
-        time.sleep(time_until_next_beat)
+    global current_beats
+    if len(beats) > 0:
+        current_beats = beats
+        scale_factor = reference_bpm / detected_bpm
+        for i in range(len(beats) - 1):
+            r = random.randint(0, 255)
+            g = random.randint(0, 255)
+            b = random.randint(0, 255)
+            bulb.set_rgb(r, g, b)
+            print(f"Color changed to ({r}, {g}, {b})")
+            time_until_next_beat = (beats[i + 1] - beats[i]) * scale_factor
+            print(f"Time difference between beats: {time_until_next_beat:.3f} seconds")
+            time.sleep(time_until_next_beat)
 
 # Callback function to process audio data
 def audio_callback(indata, frames, time, status):
@@ -112,7 +119,7 @@ def audio_callback(indata, frames, time, status):
         # Get the current song BPM from Spotify
         reference_bpm = get_current_song_bpm()
 
-        if reference_bpm:
+        if reference_bpm > 0:
             print(f"Reference BPM: {reference_bpm:.2f}, Detected BPM: {smoothed_bpm:.2f}")
         else:
             print(f"Detected BPM: {smoothed_bpm:.2f}")
@@ -126,6 +133,10 @@ with sd.InputStream(device=device_index, channels=CHANNELS, samplerate=RATE, blo
     try:
         while True:
             time.sleep(1)
+            if len(current_beats) > 0:
+                reference_bpm = get_current_song_bpm()
+                detected_bpm = np.mean(bpm_values)
+                change_color(current_beats, reference_bpm, detected_bpm)
     except KeyboardInterrupt:
         pass
 
