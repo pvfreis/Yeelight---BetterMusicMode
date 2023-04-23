@@ -93,7 +93,7 @@ def change_color(beats, reference_bpm, detected_bpm):
     global current_beats
     if len(beats) > 0:
         current_beats = beats
-        weight = 0.95  # Adjust this value to change the weight of the reference BPM
+        weight = 0.75  # Adjust this value to change the weight of the reference BPM
         weighted_bpm = (weight * reference_bpm) + ((1 - weight) * detected_bpm)
         scale_factor = reference_bpm / weighted_bpm
         for i in range(len(beats) - 1):
