@@ -1,11 +1,10 @@
 # BMM - Better Music Mode for Yeelight
 
-It always irked me how bad the music mode that comes with the Yeelight app is, so this an attempt at making one that looks better and actually measures and follows BPM.
-
+It always irked me how bad the music mode that comes with the Yeelight app is, so this an attempt at making one that looks better by actually measuring and reacting to BPM.
 
 ## Features:
 
-- Beatdetection via Madmom
+- Beatdetection via Madmom (Currently varies a LOT)
 - (TO-DO) Option to add Spotify API Key to double-check current BPM
 
 
