@@ -95,10 +95,12 @@ def change_color(beats, reference_bpm, detected_bpm):
         weight = 0.75  # Adjust this value to change the weight of the reference BPM
         weighted_bpm = (weight * reference_bpm) + ((1 - weight) * detected_bpm)
         scale_factor = reference_bpm / weighted_bpm
+        r, g, b = random.randint(0, 255), random.randint(0, 255), random.randint(0, 255)
+        offset_range = 20  # Adjust this value to change the range of allowed color difference
         for i in range(len(beats) - 1):
-            r = random.randint(0, 255)
-            g = random.randint(0, 255)
-            b = random.randint(0, 255)
+            r = (r + random.randint(-offset_range, offset_range)) % 256
+            g = (g + random.randint(-offset_range, offset_range)) % 256
+            b = (b + random.randint(-offset_range, offset_range)) % 256
             bulb.set_rgb(r, g, b)
             print(f"Color changed to ({r}, {g}, {b})")
             time_until_next_beat = (beats[i + 1] - beats[i]) * scale_factor
@@ -138,6 +140,7 @@ with sd.InputStream(device=device_index, channels=CHANNELS, samplerate=RATE, blo
                 reference_bpm = get_current_song_bpm()
                 detected_bpm = np.mean(bpm_values)
                 change_color(current_beats, reference_bpm, detected_bpm)
+                
     except KeyboardInterrupt:
         pass
 
