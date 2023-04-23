@@ -47,7 +47,6 @@ beat_processor = DBNBeatTrackingProcessor(fps=100)
 
 current_beats = []
 
-
 # Buffer to store audio data for beat detection
 audio_buffer = np.empty((0, 1), dtype=np.float32)
 
@@ -105,7 +104,6 @@ def change_color(beats, reference_bpm, detected_bpm):
             time_until_next_beat = (beats[i + 1] - beats[i]) * scale_factor
             print(f"Time difference between beats: {time_until_next_beat:.3f} seconds")
             time.sleep(time_until_next_beat)
-
 
 # Callback function to process audio data
 def audio_callback(indata, frames, time, status):
