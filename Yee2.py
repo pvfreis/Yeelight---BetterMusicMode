@@ -8,16 +8,18 @@ import os
 from dotenv import load_dotenv
 import spotipy
 from spotipy.oauth2 import SpotifyOAuth
-
-load_dotenv()
+import threading
+import queue
 
 # Set your Spotify app credentials
-sp_client_id = os.getenv('CLIENT_ID')
-sp_client_secret = os.getenv('CLIENT_SECRET')
-sp_redirect_uri = os.getenv('REDIRECT_URI')
+sp_client_id = "abf64ee82abd462c90d42b5ea8ae8b8e"
+sp_client_secret = "4cb9acb47cdb437ba91384b819122e3b"
+sp_redirect_uri = "http://localhost:8888/callback"
 
 # Initialize the Spotipy client
 sp = spotipy.Spotify(auth_manager=SpotifyOAuth(client_id=sp_client_id, client_secret=sp_client_secret, redirect_uri=sp_redirect_uri, scope="user-read-playback-state"))
+
+load_dotenv()
 
 # Yeelight configuration
 bulb_ip = os.getenv('IP')
@@ -86,16 +88,25 @@ def beat_detection(audio_data):
         return [], 0
 
 # Change Yeelight color based on the beat
-def change_color(beats, reference_bpm, detected_bpm):
-    scale_factor = reference_bpm / detected_bpm
-    for i in range(len(beats) - 1):
-        r = random.randint(0, 255)
-        g = random.randint(0, 255)
-        b = random.randint(0, 255)
-        bulb.set_rgb(r, g, b)
-        print(f"Color changed to ({r}, {g}, {b})")
-        time_until_next_beat = (beats[i + 1] - beats[i]) * scale_factor
-        time.sleep(time_until_next_beat)
+def change_color(beat_queue):
+    while True:
+        try:
+            reference_bpm, detected_bpm = beat_queue.get(timeout=1)
+            beat_interval = 60 / reference_bpm
+            r = random.randint(0, 255)
+            g = random.randint(0, 255)
+            b = random.randint(0, 255)
+            bulb.set_rgb(r, g, b)
+            print(f"Color changed to ({r}, {g}, {b})")
+            time.sleep(beat_interval)
+        except queue.Empty:
+            continue
+
+# Create a beat_sync_event and start the change_color thread outside the callback
+beat_queue = queue.Queue()
+color_change_thread = threading.Thread(target=change_color, args=(beat_queue,))
+color_change_thread.start()
+
 
 # Callback function to process audio data
 def audio_callback(indata, frames, time, status):
@@ -118,7 +129,8 @@ def audio_callback(indata, frames, time, status):
             print(f"Detected BPM: {smoothed_bpm:.2f}")
 
         if len(beats) > 0 and reference_bpm:
-            change_color(beats, reference_bpm, smoothed_bpm)
+            beat_queue.put((reference_bpm, smoothed_bpm))
+
 
 # Start the stream with the audio output device
 with sd.InputStream(device=device_index, channels=CHANNELS, samplerate=RATE, blocksize=BUFFER_SIZE, dtype=FORMAT, callback=audio_callback):
